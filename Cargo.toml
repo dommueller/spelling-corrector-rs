@@ -1,0 +1,6 @@
+[package]
+name = "spelling-corrector"
+version = "0.1.0"
+authors = ["Dominik Mueller <dominik.mueller@student.hpi.uni-potsdam.de>"]
+
+[dependencies]

@@ -1,0 +1,1 @@
+A simple spelling corrector in Rust based on [Peter Norvig's spelling corrector](http://norvig.com/spell-correct.html)
