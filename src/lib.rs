@@ -29,11 +29,10 @@ pub fn edits1(word: &str) -> HashSet<String> {
             edits1.insert(delete);
 
             // replaces
-            for c in alphabet.chars() {
+            for c in ALPHABET.chars() {
                 let mut replace = a.to_string();
                 replace.push(c);
                 replace = replace + &b[1..];
-                println!("{:?}", replace);
                 edits1.insert(replace);
             }
 
@@ -49,11 +48,10 @@ pub fn edits1(word: &str) -> HashSet<String> {
         }
 
         // insert
-        for c in alphabet.chars() {
+        for c in ALPHABET.chars() {
             let mut insert = a.to_string();
             insert.push(c);
             insert = insert + b;
-            println!("{:?}", insert);
             edits1.insert(insert);
         }
     }
@@ -61,29 +59,57 @@ pub fn edits1(word: &str) -> HashSet<String> {
 }
 
 #[derive(Debug)]
-struct SimpleSpellChecker<'a> {
+pub struct SimpleSpellChecker<'a> {
     nwords: HashMap<&'a str, i32>
 }
 
-static alphabet: &'static str = "abcdefghijklmnopqrstuvwxyz";
+static ALPHABET: &'static str = "abcdefghijklmnopqrstuvwxyz";
 
 impl<'a> SimpleSpellChecker<'a> {
-    fn new(corpus: &str) -> SimpleSpellChecker {
+    pub fn new(corpus: &str) -> SimpleSpellChecker {
         SimpleSpellChecker{nwords: train(get_words(&corpus))}
     }
 
+    fn known_edits2(&self, word: &str) -> HashSet<String> {
+        let mut edits2 = HashSet::<String>::new();
 
+        for e1 in edits1(word) {
+            for e2 in edits1(&e1) {
+                if self.nwords.contains_key::<str>(&e2) {
+                    edits2.insert(e2.clone());
+                }
+            }
+        }
 
-    fn known_edits2(&self, words: Vec<&str>) -> Vec<&str> {
-        unimplemented!();
+        return edits2;
     }
 
-    fn known(&self, words: Vec<&str>) -> Vec<&str> {
-        unimplemented!();
+    fn known<'b>(&'b self, words: HashSet<String>) -> HashSet<String> {
+        words.into_iter().filter(|w| self.nwords.contains_key::<str>(&w)).collect()
     }
 
-    fn correct(word: &str) -> &str {
-        unimplemented!();
+    pub fn correct<'b>(&'b self, word: &'b str) -> String {
+        let mut candidates = HashSet::<String>::new();
+        candidates.insert(String::from(word));
+
+        if self.known(candidates.clone()).is_empty() {
+            let known_edits1 = self.known(edits1(word));
+            if known_edits1.len() > 0 {
+                candidates = known_edits1;
+            } else {
+                let known_edits2 = self.known_edits2(word);
+                if known_edits2.len() > 0 {
+                    candidates = known_edits2;
+                }
+            }
+        }
+        let correction = candidates.iter().max_by_key(|w| {
+            match self.nwords.get::<&str>(&&***w) {
+                Some(&v) => v,
+                None => 1i32
+            }
+        }).unwrap();
+        return correction.clone();
     }
 }
 
@@ -91,6 +117,9 @@ impl<'a> SimpleSpellChecker<'a> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    use std::io::prelude::*;
+    use std::fs::File;
 
     #[test]
     fn check_words() {
@@ -115,7 +144,6 @@ mod tests {
     fn check_edits1() {
         let input = "something";
         let results = edits1(input);
-        println!("{:?}", results);
         assert!(results.contains("somethin"));
         assert!(results.contains("omething"));
         assert!(results.contains("somehting"));
@@ -123,6 +151,18 @@ mod tests {
         assert!(results.contains("somethingb"));
         assert!(results.contains("sometring"));
         assert_eq!(results.len(), 494);
-
     }
+
+    #[test]
+    fn returns_correct_words() {
+        let mut f = File::open("big.txt").unwrap();
+        let mut s = String::new();
+        f.read_to_string(&mut s).unwrap();
+
+        let spell_checker = SimpleSpellChecker::new(&s);
+        assert_eq!(spell_checker.correct("speling").to_string(), "spelling");
+        assert_eq!(spell_checker.correct("korrecter").to_string(), "corrected");
+    }
+
+
 }

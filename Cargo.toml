@@ -1,5 +1,5 @@
 [package]
-name = "spelling-corrector"
+name = "spelling_corrector"
 version = "0.1.0"
 authors = ["Dominik Mueller <dominik.mueller@student.hpi.uni-potsdam.de>"]
 
