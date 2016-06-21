@@ -18,8 +18,46 @@ pub fn train(features: Vec<&str>) -> HashMap<&str, i32> {
     return nwords;
 }
 
-pub fn edits1(words: Vec<&str>) -> Vec<&str> {
-    unimplemented!();
+pub fn edits1(word: &str) -> HashSet<String> {
+    let mut edits1 = HashSet::<String>::new();
+    for i in 0..(word.len() + 1) {
+        let (a, b): (&str, &str) = word.split_at(i);
+
+        if b.len() > 0 {
+            // deletes
+            let delete = a.to_string() + &b[1..];
+            edits1.insert(delete);
+
+            // replaces
+            for c in alphabet.chars() {
+                let mut replace = a.to_string();
+                replace.push(c);
+                replace = replace + &b[1..];
+                println!("{:?}", replace);
+                edits1.insert(replace);
+            }
+
+        }
+
+        // tranpose
+        if b.len() > 1 {
+            let transpose = a.to_string();
+            let transpose = transpose + &b[1..2];
+            let transpose = transpose + &b[0..1];
+            let transpose = transpose + &b[2..];
+            edits1.insert(transpose);
+        }
+
+        // insert
+        for c in alphabet.chars() {
+            let mut insert = a.to_string();
+            insert.push(c);
+            insert = insert + b;
+            println!("{:?}", insert);
+            edits1.insert(insert);
+        }
+    }
+    return edits1
 }
 
 #[derive(Debug)]
@@ -74,6 +112,17 @@ mod tests {
     }
 
     #[test]
-    fn it_works() {
+    fn check_edits1() {
+        let input = "something";
+        let results = edits1(input);
+        println!("{:?}", results);
+        assert!(results.contains("somethin"));
+        assert!(results.contains("omething"));
+        assert!(results.contains("somehting"));
+        assert!(results.contains("bsomething"));
+        assert!(results.contains("somethingb"));
+        assert!(results.contains("sometring"));
+        assert_eq!(results.len(), 494);
+
     }
 }
